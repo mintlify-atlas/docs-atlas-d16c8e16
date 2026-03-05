@@ -1,0 +1,80 @@
+{
+  "projectType": "api-service",
+  "projectName": "Automatización Backend",
+  "projectDescription": "FastAPI-based classroom scheduling and reservation automation system for academic institutions",
+  "theme": "sequoia",
+  "primaryColor": "#1e3a8a",
+  "lightColor": "#3b82f6",
+  "darkColor": "#1e293b",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/architecture",
+              "concepts/design-patterns",
+              "concepts/constraint-system",
+              "concepts/data-model"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/room-availability",
+              "guides/reservations",
+              "guides/schedule-generation",
+              "guides/constraint-validation"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api/overview",
+              "api/room-availability",
+              "api/reservations",
+              "api/schedules",
+              "api/catalog-data"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Room availability checking with multi-constraint validation",
+    "Reservation management with state transitions",
+    "Schedule generation using Builder pattern",
+    "Chain of Responsibility for constraint handling",
+    "Semester-wide schedule orchestration",
+    "Facade pattern for complex operations"
+  ],
+  "publicApiSurface": [
+    "POST /api/v1/aulas-disponibles",
+    "POST /api/v1/reservar-aula",
+    "GET /api/v1/programaciones",
+    "GET /api/v1/programaciones/{programacion_id}",
+    "PUT /api/v1/programaciones/{programacion_id}/estado",
+    "DELETE /api/v1/programaciones/{programacion_id}",
+    "POST /api/v1/crear-horario-desde-programacion/{programacion_id}",
+    "POST /api/v1/crear-horario-completo-semestre/{semestre}",
+    "GET /api/v1/horarios-por-semestre/{semestre}",
+    "GET /api/v1/datos",
+    "GET /api/v1/health"
+  ]
+}
