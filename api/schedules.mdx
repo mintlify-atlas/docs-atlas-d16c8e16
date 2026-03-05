@@ -1,0 +1,523 @@
+---
+title: 'Schedule Management'
+description: 'Create and manage complete semester schedules using the Builder pattern'
+---
+
+## Create Schedule from Reservation
+
+<RequestExample>
+```bash cURL
+curl -X POST http://localhost:8000/api/v1/crear-horario-desde-programacion/PROG001
+```
+
+```python Python
+import requests
+
+prog_id = "PROG001"
+response = requests.post(
+    f'http://localhost:8000/api/v1/crear-horario-desde-programacion/{prog_id}'
+)
+result = response.json()
+
+if result['success']:
+    print(f"Schedule created: {result['horario']['id']}")
+    print(f"Type: {result['tipo_horario']}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Success
+{
+  "success": true,
+  "horario": {
+    "id": "H_PROG001_20250617_151314",
+    "tipo": "normal",
+    "asignatura": {
+      "id": "A001",
+      "nombre": "Álgebra Lineal"
+    },
+    "aula": {
+      "id": "AU001",
+      "nombre": "Aula 101"
+    },
+    "docente": {
+      "id": "D001",
+      "nombre": "Dr. García"
+    },
+    "start_time": "07:00",
+    "end_time": "09:00",
+    "dia": "Lunes",
+    "created_at": "2025-06-17T15:13:14.191244",
+    "estado": "confirmado"
+  },
+  "programacion_actualizada": {
+    "id": "PROG001",
+    "estado": "ocupado",
+    "horario_id": "H_PROG001_20250617_151314",
+    "fecha_confirmacion": "2025-06-17T15:13:14.191244"
+  },
+  "tipo_horario": "normal"
+}
+```
+
+```json 400 Invalid State
+{
+  "success": false,
+  "error": "La programación debe estar en estado 'reservado', actual: ocupado"
+}
+```
+
+```json 400 Not Found
+{
+  "success": false,
+  "error": "Programación no encontrada"
+}
+```
+</ResponseExample>
+
+### POST /crear-horario-desde-programacion/{programacion_id}
+
+Creates a formal schedule (horario) from a reservation (programacion) using the Builder design pattern.
+
+#### How It Works
+
+1. **Validates programacion** - Must exist and be in `reservado` state
+2. **Loads related entities** - Retrieves course, classroom, professor, and campus data
+3. **Determines schedule type** - Based on course type (normal, laboratorio, virtual, bloqueo)
+4. **Builds schedule object** - Uses HorarioFacade and Builder pattern to create validated schedule
+5. **Updates programacion** - Changes state to `ocupado` and links to created schedule
+
+<Note>
+This endpoint implements the Builder design pattern through the HorarioFacade, providing structured schedule creation with validation.
+</Note>
+
+#### Path Parameters
+
+<ParamField path="programacion_id" type="string" required>
+  ID of the programacion (reservation) to convert into a schedule. Must have status `reservado`.
+  
+  Example: `"PROG001"`
+</ParamField>
+
+#### Response Fields
+
+<ResponseField name="success" type="boolean">
+  Indicates if schedule was created successfully
+</ResponseField>
+
+<ResponseField name="horario" type="object">
+  The created schedule object
+  
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">
+      Unique schedule ID (format: `H_{programacion_id}_{timestamp}`)
+    </ResponseField>
+    <ResponseField name="tipo" type="string">
+      Schedule type: `normal`, `laboratorio`, `virtual`, or `bloqueo`
+    </ResponseField>
+    <ResponseField name="asignatura" type="object">
+      Course information
+    </ResponseField>
+    <ResponseField name="aula" type="object">
+      Classroom information
+    </ResponseField>
+    <ResponseField name="docente" type="object">
+      Professor information
+    </ResponseField>
+    <ResponseField name="sede" type="object">
+      Campus information
+    </ResponseField>
+    <ResponseField name="start_time" type="string">
+      Start time
+    </ResponseField>
+    <ResponseField name="end_time" type="string">
+      End time
+    </ResponseField>
+    <ResponseField name="dia" type="string">
+      Day of week
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp when schedule was created
+    </ResponseField>
+    <ResponseField name="estado" type="string">
+      Schedule state (typically `confirmado`)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="programacion_actualizada" type="object">
+  The updated programacion with new status and schedule reference
+  
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">
+      Programacion ID
+    </ResponseField>
+    <ResponseField name="estado" type="string">
+      Updated to `ocupado`
+    </ResponseField>
+    <ResponseField name="horario_id" type="string">
+      ID of the created schedule
+    </ResponseField>
+    <ResponseField name="fecha_confirmacion" type="string">
+      ISO 8601 timestamp of confirmation
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="tipo_horario" type="string">
+  Type of schedule created
+</ResponseField>
+
+---
+
+## Create Complete Semester Schedule
+
+<RequestExample>
+```bash cURL
+curl -X POST 'http://localhost:8000/api/v1/crear-horario-completo-semestre/1?validar_conjunto=true'
+```
+
+```python Python
+import requests
+
+semester = 1
+response = requests.post(
+    f'http://localhost:8000/api/v1/crear-horario-completo-semestre/{semester}',
+    params={'validar_conjunto': True}
+)
+result = response.json()
+
+if result['success']:
+    print(f"Created {result['total_horarios']} schedules for semester {semester}")
+    print(f"Validation: {result['validacion_conjunto']}")
+    print(f"Statistics: {result['estadisticas']}")
+else:
+    print(f"Errors: {result.get('errores', [])}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Success
+{
+  "success": true,
+  "semestre": 1,
+  "total_horarios": 15,
+  "horarios": [
+    {
+      "id": "H_PROG001_20250617_151314",
+      "tipo": "normal",
+      "asignatura": {"id": "A001", "nombre": "Álgebra Lineal"},
+      "aula": {"id": "AU001", "nombre": "Aula 101"},
+      "start_time": "07:00",
+      "end_time": "09:00",
+      "dia": "Lunes"
+    }
+  ],
+  "errores": [],
+  "estadisticas": {
+    "total_schedules": 15,
+    "by_type": {
+      "normal": 10,
+      "laboratorio": 5
+    },
+    "by_day": {
+      "Lunes": 3,
+      "Martes": 3,
+      "Miércoles": 3,
+      "Jueves": 3,
+      "Viernes": 3
+    }
+  },
+  "validacion_conjunto": "OK"
+}
+```
+
+```json 400 Validation Failed
+{
+  "success": false,
+  "error": "Validación de conjunto falló: Se encontraron conflictos de horario",
+  "horarios_individuales": [],
+  "errores_individuales": [
+    "Programación PROG005: Error al crear horario: Conflicto de aula"
+  ]
+}
+```
+
+```json 400 No Reservations
+{
+  "success": false,
+  "error": "No hay programaciones ocupadas para el semestre 1"
+}
+```
+</ResponseExample>
+
+### POST /crear-horario-completo-semestre/{semestre}
+
+Creates a complete schedule for an entire semester by processing all reserved programaciones.
+
+#### How It Works
+
+1. **Queries programaciones** - Finds all programaciones with status `reservado` for the semester
+2. **Creates individual schedules** - Calls schedule creation for each programacion
+3. **Validates as a set** - Optionally validates all schedules together for conflicts
+4. **Generates statistics** - Computes statistics using the Facade pattern
+5. **Returns results** - Includes all created schedules, errors, and statistics
+
+<Warning>
+This endpoint processes multiple reservations. If `validar_conjunto=true`, any validation failure will cause the entire operation to fail.
+</Warning>
+
+#### Path Parameters
+
+<ParamField path="semestre" type="integer" required>
+  Semester number (1-10) to create schedules for
+  
+  Example: `1`
+</ParamField>
+
+#### Query Parameters
+
+<ParamField query="validar_conjunto" type="boolean" default="true">
+  Whether to validate all schedules together for conflicts. Set to `false` to skip collective validation.
+  
+  Example: `true`
+</ParamField>
+
+#### Response Fields
+
+<ResponseField name="success" type="boolean">
+  Overall success status
+</ResponseField>
+
+<ResponseField name="semestre" type="integer">
+  Semester number processed
+</ResponseField>
+
+<ResponseField name="total_horarios" type="integer">
+  Number of schedules successfully created
+</ResponseField>
+
+<ResponseField name="horarios" type="array">
+  List of all created schedule objects (same structure as individual schedule)
+</ResponseField>
+
+<ResponseField name="errores" type="array">
+  List of error messages for any programaciones that failed to convert to schedules
+</ResponseField>
+
+<ResponseField name="estadisticas" type="object">
+  Statistics about the created schedules
+  
+  <Expandable title="properties">
+    <ResponseField name="total_schedules" type="integer">
+      Total count of schedules
+    </ResponseField>
+    <ResponseField name="by_type" type="object">
+      Breakdown by schedule type (normal, laboratorio, virtual, bloqueo)
+    </ResponseField>
+    <ResponseField name="by_day" type="object">
+      Breakdown by day of week
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="validacion_conjunto" type="string">
+  Result of collective validation: "OK" if validation passed or "No validado" if skipped
+</ResponseField>
+
+---
+
+## List Schedules by Semester
+
+<RequestExample>
+```bash cURL
+curl http://localhost:8000/api/v1/horarios-por-semestre/1
+```
+
+```python Python
+import requests
+
+semester = 1
+response = requests.get(
+    f'http://localhost:8000/api/v1/horarios-por-semestre/{semester}'
+)
+data = response.json()
+
+print(f"Semester {data['semestre']}: {data['total_horarios']} schedules")
+
+for horario in data['horarios']:
+    print(f"{horario['dia']} {horario['hora_inicio']}-{horario['hora_fin']}")
+    print(f"  {horario['asignatura_id']} in {horario['aula_id']}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Success
+{
+  "semestre": 1,
+  "total_horarios": 15,
+  "horarios": [
+    {
+      "horario_id": "H_PROG001_20250617_151314",
+      "programacion_id": "PROG001",
+      "aula_id": "AU001",
+      "asignatura_id": "A001",
+      "docente_id": "D001",
+      "fecha": "2024-07-22",
+      "dia": "Lunes",
+      "hora_inicio": "07:00",
+      "hora_fin": "09:00",
+      "semestre": 1,
+      "estado": "ocupado",
+      "fecha_confirmacion": "2025-06-17T15:13:14.191244"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+### GET /horarios-por-semestre/{semestre}
+
+Retrieves all confirmed schedules for a specific semester.
+
+<Note>
+This endpoint returns programaciones with status `ocupado` (confirmed schedules), not `reservado` (pending reservations).
+</Note>
+
+#### Path Parameters
+
+<ParamField path="semestre" type="integer" required>
+  Semester number to query
+  
+  Example: `1`
+</ParamField>
+
+#### Response Fields
+
+<ResponseField name="semestre" type="integer">
+  The queried semester number
+</ResponseField>
+
+<ResponseField name="total_horarios" type="integer">
+  Count of confirmed schedules
+</ResponseField>
+
+<ResponseField name="horarios" type="array">
+  List of schedule/programacion objects with status `ocupado`
+  
+  <Expandable title="schedule object">
+    <ResponseField name="horario_id" type="string">
+      ID of the created schedule
+    </ResponseField>
+    <ResponseField name="programacion_id" type="string">
+      ID of the underlying programacion
+    </ResponseField>
+    <ResponseField name="aula_id" type="string">
+      Classroom ID
+    </ResponseField>
+    <ResponseField name="asignatura_id" type="string">
+      Course ID
+    </ResponseField>
+    <ResponseField name="docente_id" type="string">
+      Professor ID
+    </ResponseField>
+    <ResponseField name="fecha" type="string">
+      Session date
+    </ResponseField>
+    <ResponseField name="dia" type="string">
+      Day of week
+    </ResponseField>
+    <ResponseField name="hora_inicio" type="string">
+      Start time
+    </ResponseField>
+    <ResponseField name="hora_fin" type="string">
+      End time
+    </ResponseField>
+    <ResponseField name="semestre" type="integer">
+      Semester number
+    </ResponseField>
+    <ResponseField name="estado" type="string">
+      Always `ocupado` for confirmed schedules
+    </ResponseField>
+    <ResponseField name="fecha_confirmacion" type="string">
+      ISO 8601 timestamp when schedule was confirmed
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Complete Semester Workflow
+
+### End-to-End Example
+
+```python
+import requests
+import time
+
+BASE_URL = "http://localhost:8000/api/v1"
+semester = 1
+
+# Step 1: Create multiple reservations
+reservations = [
+    {"asignatura_id": "A001", "aula_id": "AU001", "dia": "Lunes", "hora_inicio": "07:00", "hora_fin": "09:00"},
+    {"asignatura_id": "A002", "aula_id": "AU002", "dia": "Martes", "hora_inicio": "10:00", "hora_fin": "12:00"},
+    {"asignatura_id": "A003", "aula_id": "AU003", "dia": "Miércoles", "hora_inicio": "14:00", "hora_fin": "16:00"},
+]
+
+for res in reservations:
+    res.update({
+        "fecha": "22/07/2024",
+        "cantidad_estudiantes": 30,
+        "semestre": semester,
+        "docente_id": "D001",
+        "id_usuario": "USR001"
+    })
+    
+    response = requests.post(f"{BASE_URL}/reservar-aula", json=res)
+    if response.json()['success']:
+        print(f"Reserved {res['asignatura_id']}")
+
+time.sleep(1)
+
+# Step 2: Create complete semester schedule
+response = requests.post(
+    f"{BASE_URL}/crear-horario-completo-semestre/{semester}",
+    params={'validar_conjunto': True}
+)
+
+result = response.json()
+
+if result['success']:
+    print(f"\nCreated {result['total_horarios']} schedules")
+    print(f"Statistics: {result['estadisticas']}")
+    print(f"Validation: {result['validacion_conjunto']}")
+    
+    # Step 3: Retrieve all schedules for verification
+    schedules = requests.get(f"{BASE_URL}/horarios-por-semestre/{semester}").json()
+    print(f"\nVerified {schedules['total_horarios']} confirmed schedules")
+else:
+    print(f"Failed: {result.get('error')}")
+    print(f"Errors: {result.get('errores', [])}")
+```
+
+## Schedule Types
+
+Schedules are automatically categorized by course type:
+
+| Course Type | Schedule Type | Description |
+|-------------|---------------|-------------|
+| `teorica` | `normal` | Standard lecture schedule |
+| `laboratorio` | `laboratorio` | Laboratory session schedule |
+| `virtual` | `virtual` | Online/virtual class schedule |
+| `bloqueo` | `bloqueo` | Blocking schedule (reserved time) |
+
+## Design Patterns
+
+These endpoints implement several design patterns:
+
+- **Builder Pattern**: Schedule creation through HorarioFacade
+- **Facade Pattern**: Simplified interface to complex schedule validation and creation
+- **Chain of Responsibility**: Constraint validation chain
+
+See source code for implementation details:
+- `src/core/schedules/facade/horario_facade.py`
+- `src/services/horario_completo_service.py`

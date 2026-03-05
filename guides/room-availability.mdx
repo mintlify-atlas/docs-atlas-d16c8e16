@@ -1,0 +1,490 @@
+---
+title: "Check Room Availability"
+description: "Learn how to check which rooms are available for a specific course and time slot"
+icon: "calendar-check"
+---
+
+## Overview
+
+The room availability feature helps you find suitable classrooms based on course requirements, student capacity, and time constraints. The system applies multiple validation rules to ensure only compatible rooms are returned.
+
+## How It Works
+
+When checking room availability, the system validates three main constraints:
+
+1. **Capacity**: Room must accommodate the number of students
+2. **Compatibility**: Room type must match course type (e.g., lab courses need lab rooms)
+3. **Availability**: Room must not be occupied or reserved at the requested time
+
+<Note>
+The availability check considers all reservations regardless of semester, but you can filter results by semester.
+</Note>
+
+## Quick Start
+
+<Steps>
+  <Step title="Prepare Request Data">
+    Gather the required information:
+    - Course ID (e.g., `A003`)
+    - Time slot (day, start time, end time)
+    - Number of students
+    - Semester
+  </Step>
+
+  <Step title="Send API Request">
+    Call the `/aulas-disponibles` endpoint with your data
+  </Step>
+
+  <Step title="Review Results">
+    Analyze available and unavailable rooms with rejection reasons
+  </Step>
+</Steps>
+
+## API Request
+
+### Endpoint
+
+```
+POST /aulas-disponibles
+```
+
+### Request Body
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST http://localhost:8000/aulas-disponibles \
+  -H "Content-Type: application/json" \
+  -d '{
+    "asignatura_id": "A003",
+    "hora_inicio": "14:00",
+    "hora_fin": "17:00",
+    "dia": "Miércoles",
+    "cantidad_estudiantes": 26,
+    "semestre": 1
+  }'
+```
+
+```python Python
+import requests
+
+url = "http://localhost:8000/aulas-disponibles"
+payload = {
+    "asignatura_id": "A003",
+    "hora_inicio": "14:00",
+    "hora_fin": "17:00",
+    "dia": "Miércoles",
+    "cantidad_estudiantes": 26,
+    "semestre": 1
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+
+print(f"Available rooms: {result['total_disponibles']}")
+for room in result['aulas_disponibles']:
+    print(f"- {room['nombre']} (Capacity: {room['capacidad']})")
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8000/aulas-disponibles', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    asignatura_id: 'A003',
+    hora_inicio: '14:00',
+    hora_fin: '17:00',
+    dia: 'Miércoles',
+    cantidad_estudiantes: 26,
+    semestre: 1
+  })
+});
+
+const result = await response.json();
+console.log(`Available rooms: ${result.total_disponibles}`);
+```
+
+</CodeGroup>
+
+### Request Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `asignatura_id` | string | Yes | Course identifier (e.g., "A003") |
+| `hora_inicio` | string | Yes | Start time in HH:MM format (e.g., "14:00") |
+| `hora_fin` | string | Yes | End time in HH:MM format (e.g., "17:00") |
+| `dia` | string | Yes | Day of the week (Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo) |
+| `cantidad_estudiantes` | integer | Yes | Number of students (must be > 0) |
+| `semestre` | integer | Yes | Academic semester (1-10) |
+
+## Response Format
+
+<CodeGroup>
+
+```json Success Response
+{
+  "asignatura": {
+    "id": "A003",
+    "nombre": "Estructura de Datos",
+    "tipo": "teorica"
+  },
+  "horario_solicitado": {
+    "dia": "Miércoles",
+    "hora_inicio": "14:00",
+    "hora_fin": "17:00",
+    "cantidad_estudiantes": 26,
+    "semestre": 1
+  },
+  "aulas_disponibles": [
+    {
+      "id": "AU001",
+      "nombre": "Aula 101",
+      "tipo": "teorica",
+      "capacidad": 40,
+      "sede": {
+        "id": "S001",
+        "nombre": "Sede Central"
+      },
+      "recursos": [
+        {
+          "id": "R001",
+          "nombre": "Proyector"
+        },
+        {
+          "id": "R002",
+          "nombre": "Pizarra Digital"
+        }
+      ]
+    }
+  ],
+  "aulas_no_disponibles": [
+    {
+      "id": "AU002",
+      "nombre": "Lab Computo 1",
+      "razon": "El aula de tipo laboratorio no es compatible con la asignatura de tipo teorica"
+    },
+    {
+      "id": "AU004",
+      "nombre": "Aula 201",
+      "razon": "Aula ocupada o reservada en el horario 14:00-17:00 el Miércoles"
+    }
+  ],
+  "total_disponibles": 1,
+  "total_no_disponibles": 2,
+  "error": null
+}
+```
+
+```json Error Response
+{
+  "detail": "Asignatura con ID A999 no encontrada"
+}
+```
+
+</CodeGroup>
+
+## Understanding Rejection Reasons
+
+### Capacity Constraints
+
+```json
+{
+  "id": "AU002",
+  "nombre": "Lab Computo 1",
+  "razon": "Capacidad insuficiente: 25 lugares para 30 estudiantes"
+}
+```
+
+The room doesn't have enough seats for the number of students.
+
+<Tip>
+Always request rooms with a buffer. A room with exactly the same capacity might be uncomfortably full.
+</Tip>
+
+### Compatibility Constraints
+
+```json
+{
+  "id": "AU002",
+  "nombre": "Lab Computo 1",
+  "razon": "El aula de tipo laboratorio no es compatible con la asignatura de tipo teorica"
+}
+```
+
+The room type doesn't match the course type:
+- **Laboratorio** courses require **laboratorio** rooms
+- **Teorica** courses can use **teorica** or **hibrida** rooms
+- **Hibrida** courses can use **hibrida** rooms
+
+### Availability Constraints
+
+```json
+{
+  "id": "AU001",
+  "nombre": "Aula 101",
+  "razon": "Aula ocupada o reservada en el horario 14:00-17:00 el Miércoles"
+}
+```
+
+The room has an overlapping reservation or occupied slot.
+
+<Warning>
+Time slot conflicts are checked across all semesters. A room reserved in any semester for that time will be marked as unavailable.
+</Warning>
+
+## Common Use Cases
+
+### Check Multiple Time Slots
+
+To find the best available room, check multiple time slots:
+
+```python
+import requests
+
+def find_best_room(course_id, students, day, semester):
+    """Find the best available room by checking multiple time slots."""
+    time_slots = [
+        ("07:00", "09:00"),
+        ("09:00", "12:00"),
+        ("14:00", "17:00")
+    ]
+    
+    results = []
+    for start, end in time_slots:
+        response = requests.post(
+            "http://localhost:8000/aulas-disponibles",
+            json={
+                "asignatura_id": course_id,
+                "hora_inicio": start,
+                "hora_fin": end,
+                "dia": day,
+                "cantidad_estudiantes": students,
+                "semestre": semester
+            }
+        )
+        data = response.json()
+        if data['total_disponibles'] > 0:
+            results.append({
+                "time_slot": f"{start}-{end}",
+                "rooms": data['aulas_disponibles']
+            })
+    
+    return results
+
+# Usage
+available_slots = find_best_room("A003", 26, "Lunes", 1)
+for slot in available_slots:
+    print(f"Time: {slot['time_slot']}")
+    for room in slot['rooms']:
+        print(f"  - {room['nombre']} (Capacity: {room['capacidad']})")
+```
+
+### Filter by Campus/Sede
+
+Filter available rooms by campus location:
+
+```python
+def get_rooms_by_sede(course_id, students, time_start, time_end, day, semester, sede_id):
+    """Get available rooms filtered by campus."""
+    response = requests.post(
+        "http://localhost:8000/aulas-disponibles",
+        json={
+            "asignatura_id": course_id,
+            "hora_inicio": time_start,
+            "hora_fin": time_end,
+            "dia": day,
+            "cantidad_estudiantes": students,
+            "semestre": semester
+        }
+    )
+    
+    data = response.json()
+    # Filter by sede
+    filtered_rooms = [
+        room for room in data['aulas_disponibles']
+        if room['sede']['id'] == sede_id
+    ]
+    
+    return filtered_rooms
+
+# Get only rooms in Sede Central
+rooms = get_rooms_by_sede("A003", 26, "14:00", "17:00", "Miércoles", 1, "S001")
+for room in rooms:
+    print(f"{room['nombre']} at {room['sede']['nombre']}")
+```
+
+### Check Required Resources
+
+Verify that available rooms have required resources:
+
+```python
+def find_rooms_with_resources(course_id, students, time_start, time_end, day, 
+                               semester, required_resources):
+    """Find rooms that have all required resources."""
+    response = requests.post(
+        "http://localhost:8000/aulas-disponibles",
+        json={
+            "asignatura_id": course_id,
+            "hora_inicio": time_start,
+            "hora_fin": time_end,
+            "dia": day,
+            "cantidad_estudiantes": students,
+            "semestre": semester
+        }
+    )
+    
+    data = response.json()
+    suitable_rooms = []
+    
+    for room in data['aulas_disponibles']:
+        room_resources = {r['id'] for r in room['recursos']}
+        if set(required_resources).issubset(room_resources):
+            suitable_rooms.append(room)
+    
+    return suitable_rooms
+
+# Find rooms with projector and computers
+rooms = find_rooms_with_resources(
+    "A004", 25, "14:00", "17:00", "Viernes", 1, 
+    required_resources=["R001", "R003"]  # Projector + Computers
+)
+```
+
+## Error Handling
+
+<CodeGroup>
+
+```python Handling Errors
+import requests
+from requests.exceptions import RequestException
+
+def check_availability_safe(course_id, students, time_start, time_end, day, semester):
+    """Check room availability with error handling."""
+    try:
+        response = requests.post(
+            "http://localhost:8000/aulas-disponibles",
+            json={
+                "asignatura_id": course_id,
+                "hora_inicio": time_start,
+                "hora_fin": time_end,
+                "dia": day,
+                "cantidad_estudiantes": students,
+                "semestre": semester
+            },
+            timeout=10
+        )
+        
+        # Check for HTTP errors
+        if response.status_code == 404:
+            return {"error": "Course not found"}
+        elif response.status_code == 400:
+            return {"error": "Invalid request parameters"}
+        elif response.status_code != 200:
+            return {"error": f"Server error: {response.status_code}"}
+        
+        data = response.json()
+        
+        # Check for application-level errors
+        if data.get('error'):
+            return {"error": data['error']}
+        
+        return data
+        
+    except RequestException as e:
+        return {"error": f"Network error: {str(e)}"}
+    except ValueError as e:
+        return {"error": f"Invalid JSON response: {str(e)}"}
+
+# Usage
+result = check_availability_safe("A003", 26, "14:00", "17:00", "Miércoles", 1)
+
+if 'error' in result:
+    print(f"Error: {result['error']}")
+else:
+    print(f"Found {result['total_disponibles']} available rooms")
+```
+
+```python Input Validation
+import re
+from datetime import datetime
+
+def validate_availability_request(asignatura_id, hora_inicio, hora_fin, dia, 
+                                  cantidad_estudiantes, semestre):
+    """Validate request parameters before sending."""
+    errors = []
+    
+    # Validate time format
+    time_pattern = r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+    if not re.match(time_pattern, hora_inicio):
+        errors.append("Invalid hora_inicio format. Use HH:MM")
+    if not re.match(time_pattern, hora_fin):
+        errors.append("Invalid hora_fin format. Use HH:MM")
+    
+    # Validate time order
+    if hora_inicio >= hora_fin:
+        errors.append("hora_fin must be after hora_inicio")
+    
+    # Validate day
+    valid_days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+    if dia not in valid_days:
+        errors.append(f"Invalid day. Must be one of: {', '.join(valid_days)}")
+    
+    # Validate student count
+    if cantidad_estudiantes <= 0:
+        errors.append("Student count must be greater than 0")
+    
+    # Validate semester
+    if not (1 <= semestre <= 10):
+        errors.append("Semester must be between 1 and 10")
+    
+    return errors
+
+# Usage
+errors = validate_availability_request(
+    "A003", "14:00", "17:00", "Miércoles", 26, 1
+)
+
+if errors:
+    print("Validation errors:")
+    for error in errors:
+        print(f"  - {error}")
+else:
+    # Proceed with API call
+    print("Validation passed")
+```
+
+</CodeGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Check Early" icon="clock">
+    Check room availability well in advance to ensure you have options. Popular time slots fill up quickly.
+  </Card>
+  
+  <Card title="Consider Buffer" icon="arrows-left-right">
+    Request rooms with 10-20% extra capacity for flexibility and comfort.
+  </Card>
+  
+  <Card title="Multiple Options" icon="list">
+    Check multiple time slots and days to find the best fit for your schedule.
+  </Card>
+  
+  <Card title="Verify Resources" icon="laptop">
+    Always verify that available rooms have the required equipment and resources.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Reserve a Room" icon="bookmark" href="/guides/reservations">
+    Learn how to create reservations for available rooms
+  </Card>
+  
+  <Card title="Constraint Validation" icon="shield-check" href="/guides/constraint-validation">
+    Understand how the validation chain works
+  </Card>
+</CardGroup>

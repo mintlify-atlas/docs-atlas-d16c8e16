@@ -1,0 +1,164 @@
+---
+title: 'API Overview'
+description: 'Complete API reference for the Automatización Backend scheduling system'
+---
+
+## Introduction
+
+The Automatización Backend API provides comprehensive endpoints for managing classroom scheduling, room availability, reservations, and academic data. This RESTful API enables automated classroom assignment based on multiple constraints including capacity, compatibility, and availability.
+
+## Base URL
+
+```
+http://localhost:8000/api/v1
+```
+
+## Authentication
+
+Currently, the API does not require authentication. All endpoints are publicly accessible.
+
+<Note>
+Authentication will be added in future versions. For production deployments, implement proper access control.
+</Note>
+
+## Response Format
+
+All API responses follow a consistent JSON structure:
+
+### Success Response
+
+```json
+{
+  "success": true,
+  "data": {
+    // Response data
+  }
+}
+```
+
+### Error Response
+
+```json
+{
+  "detail": "Error message describing what went wrong"
+}
+```
+
+## HTTP Status Codes
+
+The API uses standard HTTP status codes:
+
+| Status Code | Description |
+|-------------|-------------|
+| 200 | Success - Request completed successfully |
+| 400 | Bad Request - Invalid parameters or validation error |
+| 404 | Not Found - Resource not found |
+| 500 | Internal Server Error - Server-side error |
+
+## Common Request Patterns
+
+### Time Format
+
+All time fields use 24-hour format `HH:MM`:
+
+```json
+{
+  "hora_inicio": "07:00",
+  "hora_fin": "09:00"
+}
+```
+
+### Date Format
+
+Dates use the format `DD/MM/YYYY`:
+
+```json
+{
+  "fecha": "22/07/2024"
+}
+```
+
+### Day of Week
+
+Day names are in Spanish with proper capitalization:
+
+```json
+{
+  "dia": "Lunes"
+}
+```
+
+Valid values: `Lunes`, `Martes`, `Miércoles`, `Jueves`, `Viernes`, `Sábado`, `Domingo`
+
+## Core Concepts
+
+### Aulas (Classrooms)
+
+Classrooms have specific attributes:
+- **tipo**: Type of classroom (`teorica`, `laboratorio`, `virtual`)
+- **capacidad**: Maximum student capacity
+- **recursos**: Available resources (projector, computers, etc.)
+- **sede**: Campus location
+
+### Programaciones (Schedules)
+
+Schedules represent classroom reservations with states:
+- **reservado**: Reserved but not yet confirmed
+- **ocupado**: Confirmed and in use
+- **cancelado**: Cancelled reservation
+
+### Restricciones (Constraints)
+
+The system enforces three main constraints:
+1. **Capacity**: Classroom must accommodate all students
+2. **Compatibility**: Classroom type must match course requirements
+3. **Availability**: Classroom must not be occupied during requested time
+
+## API Endpoints
+
+<CardGroup cols={2}>
+  <Card title="Room Availability" icon="door-open" href="/api/room-availability">
+    Check available classrooms based on constraints
+  </Card>
+  <Card title="Reservations" icon="calendar-check" href="/api/reservations">
+    Manage classroom reservations and schedules
+  </Card>
+  <Card title="Schedule Management" icon="calendar" href="/api/schedules">
+    Create and manage complete semester schedules
+  </Card>
+  <Card title="Catalog Data" icon="database" href="/api/catalog-data">
+    Access reference data and system health
+  </Card>
+</CardGroup>
+
+## Rate Limiting
+
+Currently, there are no rate limits. This may change in future versions.
+
+## Error Handling
+
+When an error occurs, the API returns a descriptive message:
+
+```json
+{
+  "detail": "El aula seleccionada no está disponible para esta asignatura y horario."
+}
+```
+
+Common error scenarios:
+- Invalid time format
+- Classroom not found
+- Schedule conflicts
+- Validation failures
+
+## SDK and Client Libraries
+
+Currently, no official SDKs are available. You can interact with the API using:
+- cURL
+- Python `requests` library
+- JavaScript `fetch` or `axios`
+- Any HTTP client library
+
+## Support
+
+For API support and questions, please contact the development team or refer to the system documentation.

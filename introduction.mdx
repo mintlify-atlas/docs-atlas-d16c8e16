@@ -1,0 +1,85 @@
+---
+title: "Introduction"
+description: "FastAPI-based classroom scheduling and reservation automation system for academic institutions"
+---
+
+## Welcome to Automatización Backend
+
+Automatización Backend is a powerful FastAPI-based system designed to automate classroom scheduling and reservation management for academic institutions. Built with modern design patterns and comprehensive constraint validation, it streamlines the complex process of managing academic schedules, room assignments, and resource allocation.
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get up and running with the API in minutes
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Explore the complete API documentation
+  </Card>
+  <Card title="Architecture" icon="diagram-project" href="/concepts/architecture">
+    Learn about the system design and patterns
+  </Card>
+  <Card title="Guides" icon="book-open" href="/guides/room-availability">
+    Step-by-step guides for common tasks
+  </Card>
+</CardGroup>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Room Availability" icon="door-open">
+    Intelligent room availability checking with multi-constraint validation including capacity, compatibility, and occupancy checks
+  </Card>
+  <Card title="Reservation Management" icon="calendar-check">
+    Complete reservation lifecycle management with state transitions (reservado, ocupado, cancelado)
+  </Card>
+  <Card title="Schedule Generation" icon="clock">
+    Automated schedule creation using the Builder pattern for flexible horario configuration
+  </Card>
+  <Card title="Constraint System" icon="shield-check">
+    Chain of Responsibility pattern for validating complex scheduling constraints
+  </Card>
+  <Card title="Semester Orchestration" icon="calendar-days">
+    Full semester-wide schedule management and validation
+  </Card>
+  <Card title="Design Patterns" icon="cube">
+    Built with Facade, Builder, Factory, and Chain of Responsibility patterns
+  </Card>
+</CardGroup>
+
+## Use Cases
+
+The Automatización Backend system is ideal for:
+
+- **Universities and Colleges**: Managing complex class schedules across multiple buildings and campuses
+- **Training Centers**: Coordinating room assignments for courses with specific resource requirements
+- **Educational Institutions**: Automating the scheduling process while respecting institutional constraints
+- **Academic Administrators**: Reducing manual effort in schedule planning and conflict resolution
+
+## How It Works
+
+The system operates through a REST API that provides endpoints for:
+
+1. **Room Availability**: Query available rooms for a specific subject, time slot, and student count
+2. **Reservations**: Create, update, and manage room reservations with automatic validation
+3. **Schedule Generation**: Build complete schedules using the Builder pattern with constraint validation
+4. **Data Management**: Access catalog data including subjects, rooms, instructors, and resources
+
+<Note>
+All operations are validated through a comprehensive constraint system that ensures schedule integrity, prevents conflicts, and maintains data consistency.
+</Note>
+
+## Next Steps
+
+<Steps>
+  <Step title="Install and Configure">
+    Follow the [installation guide](/installation) to set up the API server and configure your environment
+  </Step>
+  <Step title="Try the Quickstart">
+    Complete the [quickstart tutorial](/quickstart) to make your first API request
+  </Step>
+  <Step title="Understand the Architecture">
+    Read the [architecture documentation](/concepts/architecture) to learn how the system works
+  </Step>
+  <Step title="Explore the API">
+    Browse the [API reference](/api/overview) to see all available endpoints
+  </Step>
+</Steps>

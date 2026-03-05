@@ -1,0 +1,492 @@
+---
+title: 'Installation'
+description: 'Complete setup guide for the Automatización Backend API'
+---
+
+This guide covers everything you need to install and configure the classroom scheduling automation system, from setting up Python to configuring your data files.
+
+## System Requirements
+
+<CardGroup cols={2}>
+  <Card title="Python Version" icon="python">
+    Python 3.8 or higher
+  </Card>
+  <Card title="Package Manager" icon="box">
+    pip (comes with Python)
+  </Card>
+  <Card title="Memory" icon="microchip">
+    Minimum 2GB RAM
+  </Card>
+  <Card title="Storage" icon="hard-drive">
+    500MB free disk space
+  </Card>
+</CardGroup>
+
+## Installation Steps
+
+<Steps>
+  <Step title="Clone the Repository">
+    Get the source code from your repository:
+    
+    ```bash
+    git clone <repository-url>
+    cd automatizacion-backend
+    ```
+  </Step>
+
+  <Step title="Create a Virtual Environment">
+    It's recommended to use a virtual environment to isolate dependencies:
+    
+    <CodeGroup>
+    ```bash macOS/Linux
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
+    
+    ```bash Windows
+    python -m venv venv
+    venv\Scripts\activate
+    ```
+    </CodeGroup>
+    
+    <Tip>
+      You'll see `(venv)` in your terminal prompt when the virtual environment is activated.
+    </Tip>
+  </Step>
+
+  <Step title="Install Dependencies">
+    Install all required Python packages:
+    
+    ```bash
+    pip install -r requirements.txt
+    ```
+    
+    This installs the following key packages:
+    
+    | Package | Version | Purpose |
+    |---------|---------|---------|
+    | fastapi | 0.115.12 | Web framework for building the API |
+    | uvicorn | 0.34.2 | ASGI server for running FastAPI |
+    | pydantic | 2.11.4 | Data validation and settings |
+    | ortools | 9.12.4544 | Google's optimization library for scheduling |
+    | pandas | 2.2.3 | Data manipulation and analysis |
+    | numpy | 2.2.6 | Numerical computing |
+    | requests | 2.32.3 | HTTP library for making API calls |
+    | pytest | 8.3.5 | Testing framework |
+  </Step>
+
+  <Step title="Verify Installation">
+    Check that all packages are installed correctly:
+    
+    ```bash
+    pip list
+    ```
+    
+    You should see all the packages from requirements.txt listed.
+  </Step>
+
+  <Step title="Set Up Data Files">
+    The system requires JSON data files in the `data/` directory. Ensure these files exist:
+    
+    ```
+    data/
+    ├── asignaturas.json     # Course definitions
+    ├── aulas.json           # Classroom information
+    ├── docentes.json        # Teacher data
+    ├── recursos.json        # Resource catalog
+    ├── sedes.json          # Campus/building information
+    └── programaciones.json  # Schedule reservations
+    ```
+    
+    <Note>
+      Sample data files are included in the repository. See the Data Structure section below for details on the format.
+    </Note>
+  </Step>
+
+  <Step title="Start the Server">
+    Run the development server:
+    
+    ```bash
+    uvicorn src.main:app --reload
+    ```
+    
+    The API will be available at `http://localhost:8000`.
+  </Step>
+</Steps>
+
+## Data Structure
+
+The system uses JSON files to store catalog data. Here's the structure of each file:
+
+### Asignaturas (Courses)
+
+Contains course information and requirements:
+
+```json data/asignaturas.json
+[
+  {
+    "id": "A001",
+    "nombre": "Álgebra Lineal",
+    "estado": "activo",
+    "duracion": "6 meses",
+    "semestre": 1,
+    "creditos": 4,
+    "descripcion": "Introducción a álgebra lineal para ingenierías",
+    "requiereRecursos": ["R003"],
+    "tipo": "teorica"
+  },
+  {
+    "id": "A004",
+    "nombre": "Algoritmos y Lógica Computacional",
+    "estado": "activo",
+    "duracion": "6 meses",
+    "semestre": 1,
+    "creditos": 3,
+    "descripcion": "Fundamentos de algoritmos y lógica computacional",
+    "requiereRecursos": ["R001", "R002", "R003"],
+    "tipo": "laboratorio"
+  }
+]
+```
+
+**Course Types:**
+- `teorica`: Theoretical courses (require standard classrooms)
+- `laboratorio`: Lab courses (require computer labs or specialized equipment)
+- `hibrida`: Hybrid courses (can use either type of classroom)
+
+### Aulas (Classrooms)
+
+Contains classroom specifications:
+
+```json data/aulas.json
+[
+  {
+    "id": "AU001",
+    "nombre": "Aula 101",
+    "estado": "activo",
+    "codigo": "A101",
+    "descripcion": "Aula teórica principal",
+    "tipo": "teorica",
+    "capacidad": 40,
+    "id_sede": "S001",
+    "id_recursos": ["R001", "R002"]
+  },
+  {
+    "id": "AU002",
+    "nombre": "Lab Computo 1",
+    "estado": "activo",
+    "codigo": "L101",
+    "descripcion": "Laboratorio de sistemas",
+    "tipo": "laboratorio",
+    "capacidad": 25,
+    "id_sede": "S001",
+    "id_recursos": ["R003"]
+  }
+]
+```
+
+**Classroom Types:**
+- `teorica`: Standard classroom for lectures
+- `laboratorio`: Computer lab or specialized lab
+- `hibrida`: Multi-purpose room
+
+### Recursos (Resources)
+
+Available resources that classrooms can have:
+
+```json data/recursos.json
+[
+  {
+    "id": "R001",
+    "nombre": "Proyector",
+    "descripcion": "Proyector multimedia"
+  },
+  {
+    "id": "R002",
+    "nombre": "Pizarra Digital",
+    "descripcion": "Pizarra interactiva"
+  },
+  {
+    "id": "R003",
+    "nombre": "Computadoras",
+    "descripcion": "Equipos de cómputo"
+  }
+]
+```
+
+### Docentes (Teachers)
+
+Teacher information:
+
+```json data/docentes.json
+[
+  {
+    "id": "D001",
+    "nombre": "Juan Pérez",
+    "email": "juan.perez@universidad.edu",
+    "departamento": "Matemáticas"
+  }
+]
+```
+
+### Sedes (Campus/Buildings)
+
+Campus or building information:
+
+```json data/sedes.json
+[
+  {
+    "id": "S001",
+    "nombre": "Sede Principal",
+    "direccion": "Calle Principal 123"
+  },
+  {
+    "id": "S002",
+    "nombre": "Sede Norte",
+    "direccion": "Avenida Norte 456"
+  }
+]
+```
+
+### Programaciones (Reservations)
+
+This file stores classroom reservations and is managed by the API:
+
+```json data/programaciones.json
+[
+  {
+    "id": "PROG-001",
+    "asignatura_id": "A001",
+    "aula_id": "AU001",
+    "docente_id": "D001",
+    "fecha": "2024-03-15",
+    "dia": "Lunes",
+    "hora_inicio": "08:00",
+    "hora_fin": "10:00",
+    "cantidad_estudiantes": 30,
+    "semestre": 1,
+    "estado": "reservado",
+    "fecha_creacion": "2024-03-01T10:00:00",
+    "fecha_confirmacion": null,
+    "horario_id": null,
+    "id_usuario": "user123"
+  }
+]
+```
+
+**Reservation States:**
+- `reservado`: Classroom is reserved but not yet confirmed
+- `ocupado`: Classroom is confirmed and in use
+- `cancelado`: Reservation was cancelled
+
+## Configuration
+
+### FastAPI Application Settings
+
+The main application configuration is in `src/main.py`:
+
+```python src/main.py
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI(
+    title="Modulo Automatización",
+    description="Modulo de automatización para la gestion de procesos",
+    version="0.0.1",
+)
+
+# API routes are prefixed with /api/v1
+app.include_router(router, prefix="/api/v1", tags=["horarios"])
+
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+<Warning>
+  **Production Security**: The CORS configuration allows all origins (`["*"]`). In production, restrict this to your specific domains:
+  ```python
+  allow_origins=["https://yourdomain.com", "https://app.yourdomain.com"]
+  ```
+</Warning>
+
+### Server Configuration
+
+You can configure the server with command-line options:
+
+```bash
+# Change port
+uvicorn src.main:app --reload --port 8001
+
+# Bind to all network interfaces
+uvicorn src.main:app --reload --host 0.0.0.0
+
+# Disable auto-reload (for production)
+uvicorn src.main:app --host 0.0.0.0 --port 8000
+
+# Set number of workers (production)
+uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 4
+```
+
+## Verify Installation
+
+Run these commands to ensure everything is set up correctly:
+
+<Steps>
+  <Step title="Check Server Health">
+    ```bash
+    curl http://localhost:8000/api/v1/health
+    ```
+    
+    Expected response:
+    ```json
+    {
+      "status": "healthy",
+      "service": "Gestión de Horarios",
+      "version": "1.0.0"
+    }
+    ```
+  </Step>
+
+  <Step title="Check Root Endpoint">
+    ```bash
+    curl http://localhost:8000/api/v1/
+    ```
+    
+    Expected response:
+    ```json
+    {
+      "message": "Sistema de Gestión de Horarios - API v1.0"
+    }
+    ```
+  </Step>
+
+  <Step title="Load Catalog Data">
+    ```bash
+    curl http://localhost:8000/api/v1/datos
+    ```
+    
+    Should return all catalog data (courses, classrooms, teachers, resources, and campuses).
+  </Step>
+</Steps>
+
+## Running Tests
+
+The project includes a test suite using pytest:
+
+```bash
+# Run all tests
+pytest
+
+# Run with verbose output
+pytest -v
+
+# Run specific test file
+pytest tests/test_api.py
+
+# Run with coverage report
+pytest --cov=src tests/
+```
+
+## Development Tools
+
+### Interactive API Documentation
+
+FastAPI provides automatic interactive documentation:
+
+<CardGroup cols={2}>
+  <Card title="Swagger UI" icon="swagger" href="http://localhost:8000/docs">
+    Interactive API testing interface
+    
+    Visit: `http://localhost:8000/docs`
+  </Card>
+  <Card title="ReDoc" icon="book" href="http://localhost:8000/redoc">
+    Alternative API documentation
+    
+    Visit: `http://localhost:8000/redoc`
+  </Card>
+</CardGroup>
+
+### Hot Reload
+
+When running with `--reload`, the server automatically restarts when you modify Python files. This is perfect for development but should be disabled in production.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Python version error">
+    If you see a Python version error, ensure you're using Python 3.8 or higher:
+    ```bash
+    python --version
+    # or
+    python3 --version
+    ```
+    
+    On some systems, you may need to use `python3` instead of `python`.
+  </Accordion>
+
+  <Accordion title="pip install fails">
+    If package installation fails:
+    1. Upgrade pip: `pip install --upgrade pip`
+    2. Try installing packages individually to identify the problematic package
+    3. Check your Python version compatibility
+  </Accordion>
+
+  <Accordion title="Data files not found">
+    Ensure the `data/` directory exists and contains all required JSON files. The API looks for data files relative to the `src/` directory:
+    ```
+    project-root/
+    ├── src/
+    └── data/
+    ```
+  </Accordion>
+
+  <Accordion title="Port already in use">
+    If port 8000 is occupied:
+    ```bash
+    # Use a different port
+    uvicorn src.main:app --reload --port 8001
+    
+    # Or find and kill the process using port 8000
+    lsof -ti:8000 | xargs kill -9  # macOS/Linux
+    netstat -ano | findstr :8000   # Windows
+    ```
+  </Accordion>
+
+  <Accordion title="CORS errors in browser">
+    If you encounter CORS errors when calling the API from a web application:
+    1. Verify the CORS middleware is configured in `src/main.py`
+    2. Check that your origin is allowed in the `allow_origins` list
+    3. Ensure cookies/credentials are properly configured if using authentication
+  </Accordion>
+
+  <Accordion title="Import errors">
+    If you see `ModuleNotFoundError`:
+    1. Ensure you're in the project root directory
+    2. Verify all dependencies are installed: `pip list`
+    3. Check that your virtual environment is activated
+    4. Try reinstalling requirements: `pip install -r requirements.txt --force-reinstall`
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Make your first API call in 5 minutes
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Explore all available endpoints
+  </Card>
+  <Card title="Guides" icon="book-open" href="/guides/room-availability">
+    Learn how to use the API effectively
+  </Card>
+  <Card title="Architecture" icon="diagram-project" href="/concepts/architecture">
+    Understand the system design patterns
+  </Card>
+</CardGroup>

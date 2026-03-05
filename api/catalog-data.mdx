@@ -1,0 +1,465 @@
+---
+title: 'Catalog Data'
+description: 'Access reference data and system health endpoints'
+---
+
+## Get All Catalog Data
+
+<RequestExample>
+```bash cURL
+curl http://localhost:8000/api/v1/datos
+```
+
+```python Python
+import requests
+
+response = requests.get('http://localhost:8000/api/v1/datos')
+data = response.json()
+
+print(f"Courses: {len(data['asignaturas'])}")
+print(f"Classrooms: {len(data['aulas'])}")
+print(f"Professors: {len(data['docentes'])}")
+print(f"Resources: {len(data['recursos'])}")
+print(f"Campuses: {len(data['sedes'])}")
+
+# Access specific data
+for asignatura in data['asignaturas']:
+    print(f"{asignatura['id']}: {asignatura['nombre']} (Semester {asignatura['semestre']})")
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8000/api/v1/datos');
+const data = await response.json();
+
+// Find a specific classroom
+const aula = data.aulas.find(a => a.id === 'AU001');
+console.log(`${aula.nombre}: Capacity ${aula.capacidad}`);
+
+// Get all lab classrooms
+const labs = data.aulas.filter(a => a.tipo === 'laboratorio');
+console.log(`Lab classrooms: ${labs.length}`);
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Success
+{
+  "asignaturas": [
+    {
+      "id": "A001",
+      "nombre": "Álgebra Lineal",
+      "estado": "activo",
+      "duracion": "6 meses",
+      "semestre": 1,
+      "creditos": 4,
+      "descripcion": "Introducción a álgebra lineal para ingenierías",
+      "requiereRecursos": ["R003"],
+      "tipo": "teorica"
+    }
+  ],
+  "aulas": [
+    {
+      "id": "AU001",
+      "nombre": "Aula 101",
+      "estado": "activo",
+      "codigo": "A101",
+      "descripcion": "Aula teórica principal",
+      "tipo": "teorica",
+      "capacidad": 40,
+      "id_sede": "S001",
+      "id_recursos": ["R001", "R002"]
+    }
+  ],
+  "docentes": [
+    {
+      "id": "D001",
+      "nombre": "Dr. García",
+      "especialidad": "Matemáticas",
+      "email": "garcia@universidad.edu",
+      "estado": "activo"
+    }
+  ],
+  "recursos": [
+    {
+      "id": "R001",
+      "nombre": "Proyector",
+      "tipo": "audiovisual",
+      "descripcion": "Proyector multimedia"
+    }
+  ],
+  "sedes": [
+    {
+      "id": "S001",
+      "nombre": "Sede Principal",
+      "direccion": "Av. Universidad 123",
+      "ciudad": "Ciudad Universitaria"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+### GET /datos
+
+Retrieves all catalog/reference data from the system in a single request.
+
+<Note>
+This endpoint returns static catalog data loaded from JSON files. It's useful for populating dropdowns, validating IDs, and understanding system configuration.
+</Note>
+
+#### Response Fields
+
+<ResponseField name="asignaturas" type="array">
+  List of all courses/subjects
+  
+  <Expandable title="asignatura object">
+    <ResponseField name="id" type="string">
+      Unique course ID (e.g., "A001")
+    </ResponseField>
+    <ResponseField name="nombre" type="string">
+      Course name
+    </ResponseField>
+    <ResponseField name="estado" type="string">
+      Status: `activo` or `inactivo`
+    </ResponseField>
+    <ResponseField name="duracion" type="string">
+      Course duration (e.g., "6 meses")
+    </ResponseField>
+    <ResponseField name="semestre" type="integer">
+      Semester number (1-10)
+    </ResponseField>
+    <ResponseField name="creditos" type="integer">
+      Credit hours
+    </ResponseField>
+    <ResponseField name="descripcion" type="string">
+      Course description
+    </ResponseField>
+    <ResponseField name="requiereRecursos" type="array">
+      List of required resource IDs
+    </ResponseField>
+    <ResponseField name="tipo" type="string">
+      Course type: `teorica`, `laboratorio`, `virtual`, or `bloqueo`
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="aulas" type="array">
+  List of all classrooms
+  
+  <Expandable title="aula object">
+    <ResponseField name="id" type="string">
+      Unique classroom ID (e.g., "AU001")
+    </ResponseField>
+    <ResponseField name="nombre" type="string">
+      Classroom name
+    </ResponseField>
+    <ResponseField name="estado" type="string">
+      Status: `activo` or `inactivo`
+    </ResponseField>
+    <ResponseField name="codigo" type="string">
+      Short code for the classroom
+    </ResponseField>
+    <ResponseField name="descripcion" type="string">
+      Classroom description
+    </ResponseField>
+    <ResponseField name="tipo" type="string">
+      Classroom type: `teorica`, `laboratorio`, or `virtual`
+    </ResponseField>
+    <ResponseField name="capacidad" type="integer">
+      Maximum student capacity
+    </ResponseField>
+    <ResponseField name="id_sede" type="string">
+      ID of the campus where classroom is located
+    </ResponseField>
+    <ResponseField name="id_recursos" type="array">
+      List of resource IDs available in this classroom
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="docentes" type="array">
+  List of all professors/instructors
+  
+  <Expandable title="docente object">
+    <ResponseField name="id" type="string">
+      Unique professor ID (e.g., "D001")
+    </ResponseField>
+    <ResponseField name="nombre" type="string">
+      Professor name
+    </ResponseField>
+    <ResponseField name="especialidad" type="string">
+      Area of expertise
+    </ResponseField>
+    <ResponseField name="email" type="string">
+      Email address
+    </ResponseField>
+    <ResponseField name="estado" type="string">
+      Status: `activo` or `inactivo`
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="recursos" type="array">
+  List of all available resources
+  
+  <Expandable title="recurso object">
+    <ResponseField name="id" type="string">
+      Unique resource ID (e.g., "R001")
+    </ResponseField>
+    <ResponseField name="nombre" type="string">
+      Resource name (e.g., "Proyector", "Computadoras")
+    </ResponseField>
+    <ResponseField name="tipo" type="string">
+      Resource type (e.g., "audiovisual", "tecnologia")
+    </ResponseField>
+    <ResponseField name="descripcion" type="string">
+      Resource description
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="sedes" type="array">
+  List of all campuses/locations
+  
+  <Expandable title="sede object">
+    <ResponseField name="id" type="string">
+      Unique campus ID (e.g., "S001")
+    </ResponseField>
+    <ResponseField name="nombre" type="string">
+      Campus name
+    </ResponseField>
+    <ResponseField name="direccion" type="string">
+      Physical address
+    </ResponseField>
+    <ResponseField name="ciudad" type="string">
+      City name
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Common Use Cases
+
+### Populate Form Dropdowns
+
+```python
+import requests
+
+# Get all catalog data
+data = requests.get('http://localhost:8000/api/v1/datos').json()
+
+# Create dropdown options for courses
+course_options = [
+    {"value": a['id'], "label": f"{a['nombre']} (Sem {a['semestre']})"}
+    for a in data['asignaturas']
+    if a['estado'] == 'activo'
+]
+
+# Create dropdown for classrooms by type
+teoria_aulas = [
+    {"value": a['id'], "label": f"{a['nombre']} - Cap: {a['capacidad']}"}
+    for a in data['aulas']
+    if a['tipo'] == 'teorica' and a['estado'] == 'activo'
+]
+```
+
+### Validate References
+
+```python
+import requests
+
+def validate_reservation_data(reservation):
+    """Validate that all IDs in reservation exist in catalog"""
+    catalog = requests.get('http://localhost:8000/api/v1/datos').json()
+    
+    # Check course exists
+    course_exists = any(a['id'] == reservation['asignatura_id'] 
+                       for a in catalog['asignaturas'])
+    
+    # Check classroom exists
+    aula_exists = any(a['id'] == reservation['aula_id'] 
+                     for a in catalog['aulas'])
+    
+    # Check professor exists
+    docente_exists = any(d['id'] == reservation['docente_id'] 
+                        for d in catalog['docentes'])
+    
+    return course_exists and aula_exists and docente_exists
+```
+
+### Find Classrooms by Resources
+
+```python
+import requests
+
+def find_classrooms_with_projector():
+    """Find all active classrooms with projectors"""
+    catalog = requests.get('http://localhost:8000/api/v1/datos').json()
+    
+    # Find projector resource ID
+    projector = next((r for r in catalog['recursos'] 
+                     if 'Proyector' in r['nombre']), None)
+    
+    if not projector:
+        return []
+    
+    # Find classrooms with that resource
+    classrooms = [
+        aula for aula in catalog['aulas']
+        if projector['id'] in aula.get('id_recursos', []) 
+        and aula['estado'] == 'activo'
+    ]
+    
+    return classrooms
+```
+
+---
+
+## Health Check
+
+<RequestExample>
+```bash cURL
+curl http://localhost:8000/api/v1/health
+```
+
+```python Python
+import requests
+
+response = requests.get('http://localhost:8000/api/v1/health')
+health = response.json()
+
+if health['status'] == 'healthy':
+    print(f"✓ {health['service']} v{health['version']} is running")
+else:
+    print("✗ Service is down")
+```
+
+```javascript JavaScript
+const checkHealth = async () => {
+  try {
+    const response = await fetch('http://localhost:8000/api/v1/health');
+    const health = await response.json();
+    
+    if (health.status === 'healthy') {
+      console.log(`✓ API is healthy: ${health.service}`);
+      return true;
+    }
+  } catch (error) {
+    console.error('✗ API is unreachable');
+    return false;
+  }
+};
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Healthy
+{
+  "status": "healthy",
+  "service": "Gestión de Horarios",
+  "version": "1.0.0"
+}
+```
+</ResponseExample>
+
+### GET /health
+
+Simple health check endpoint to verify the API is running.
+
+<Note>
+Use this endpoint for monitoring, load balancer health checks, and service discovery.
+</Note>
+
+#### Response Fields
+
+<ResponseField name="status" type="string">
+  Health status: `healthy` if service is operational
+</ResponseField>
+
+<ResponseField name="service" type="string">
+  Service name: "Gestión de Horarios"
+</ResponseField>
+
+<ResponseField name="version" type="string">
+  API version: "1.0.0"
+</ResponseField>
+
+## Monitoring Example
+
+### Health Check Script
+
+```python
+import requests
+import time
+from datetime import datetime
+
+def monitor_api(interval_seconds=30):
+    """Monitor API health at regular intervals"""
+    while True:
+        try:
+            response = requests.get(
+                'http://localhost:8000/api/v1/health',
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                print(f"[{timestamp}] ✓ {data['service']} - {data['status']}")
+            else:
+                print(f"[{timestamp}] ✗ HTTP {response.status_code}")
+                
+        except requests.exceptions.RequestException as e:
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            print(f"[{timestamp}] ✗ Connection failed: {e}")
+        
+        time.sleep(interval_seconds)
+
+if __name__ == '__main__':
+    monitor_api()
+```
+
+### Docker Health Check
+
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/api/v1/health || exit 1
+```
+
+### Kubernetes Readiness Probe
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: horarios-backend
+spec:
+  containers:
+  - name: api
+    image: horarios-backend:latest
+    readinessProbe:
+      httpGet:
+        path: /api/v1/health
+        port: 8000
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    livenessProbe:
+      httpGet:
+        path: /api/v1/health
+        port: 8000
+      initialDelaySeconds: 15
+      periodSeconds: 20
+```
+
+## Data Files Location
+
+The catalog data is loaded from JSON files in the `/data` directory:
+
+- `asignaturas.json` - Course definitions
+- `aulas.json` - Classroom configurations
+- `docentes.json` - Professor information
+- `recursos.json` - Available resources
+- `sedes.json` - Campus locations
+
+<Warning>
+Modifying these JSON files directly will affect the catalog data returned by `/datos`. Always backup before editing.
+</Warning>

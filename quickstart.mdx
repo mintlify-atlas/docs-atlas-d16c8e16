@@ -1,80 +1,288 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: 'Quick Start'
+description: 'Get up and running with the Automatización Backend API in under 5 minutes'
 ---
 
-## Get started in three steps
+Get your first API call working in minutes. This guide will walk you through starting the server and making your first request to check classroom availability.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+Before you begin, ensure you have:
+- Python 3.8 or higher installed
+- pip package manager
+- Basic understanding of REST APIs
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+## Start the Server
+
+<Steps>
+  <Step title="Install Dependencies">
+    Install all required packages from the requirements.txt file:
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    ```bash
+    pip install -r requirements.txt
+    ```
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    Key dependencies include:
+    - **FastAPI**: Modern, fast web framework for building APIs
+    - **Uvicorn**: ASGI server for running FastAPI applications
+    - **Pydantic**: Data validation using Python type annotations
+    - **OR-Tools**: Google's optimization tools for scheduling
+  </Step>
 
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+  <Step title="Run the Development Server">
+    Start the FastAPI server using Uvicorn:
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    ```bash
+    uvicorn src.main:app --reload
+    ```
+    
+    The server will start on `http://localhost:8000` with auto-reload enabled for development.
+    
+    <Info>
+      The `--reload` flag enables hot-reloading, automatically restarting the server when code changes are detected.
+    </Info>
+  </Step>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+  <Step title="Verify the Server">
+    Check that the API is running by visiting the health endpoint:
+    
+    ```bash
+    curl http://localhost:8000/api/v1/health
+    ```
+    
+    Expected response:
+    ```json
+    {
+      "status": "healthy",
+      "service": "Gestión de Horarios",
+      "version": "1.0.0"
+    }
+    ```
+  </Step>
+</Steps>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+## Make Your First API Call
 
-### Step 3: Go live
+Let's find available classrooms for a specific course and time slot.
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+### Check Available Classrooms
 
-## Next steps
+The most common operation is checking which classrooms are available for a course at a specific time. This endpoint applies all restrictions: capacity, compatibility, and availability.
 
-Now that you have your docs running, explore these key features:
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8000/api/v1/aulas-disponibles \
+  -H "Content-Type: application/json" \
+  -d '{
+    "asignatura_id": "A001",
+    "hora_inicio": "08:00",
+    "hora_fin": "10:00",
+    "dia": "Lunes",
+    "cantidad_estudiantes": 30,
+    "semestre": 1
+  }'
+```
 
-<CardGroup cols={2}>
+```python Python
+import requests
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+url = "http://localhost:8000/api/v1/aulas-disponibles"
+payload = {
+    "asignatura_id": "A001",
+    "hora_inicio": "08:00",
+    "hora_fin": "10:00",
+    "dia": "Lunes",
+    "cantidad_estudiantes": 30,
+    "semestre": 1
+}
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+response = requests.post(url, json=payload)
+print(response.json())
+```
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+```javascript JavaScript
+const response = await fetch('http://localhost:8000/api/v1/aulas-disponibles', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    asignatura_id: 'A001',
+    hora_inicio: '08:00',
+    hora_fin: '10:00',
+    dia: 'Lunes',
+    cantidad_estudiantes: 30,
+    semestre: 1
+  })
+});
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+const data = await response.json();
+console.log(data);
+```
+</CodeGroup>
 
-</CardGroup>
+### Understanding the Response
+
+The API returns comprehensive information about available and unavailable classrooms:
+
+```json
+{
+  "asignatura": {
+    "id": "A001",
+    "nombre": "Álgebra Lineal",
+    "tipo": "teorica"
+  },
+  "horario_solicitado": {
+    "dia": "Lunes",
+    "hora_inicio": "08:00",
+    "hora_fin": "10:00",
+    "cantidad_estudiantes": 30,
+    "semestre": 1
+  },
+  "aulas_disponibles": [
+    {
+      "id": "AU001",
+      "nombre": "Aula 101",
+      "tipo": "teorica",
+      "capacidad": 40,
+      "sede": {
+        "id": "S001",
+        "nombre": "Sede Principal"
+      },
+      "recursos": [
+        {
+          "id": "R001",
+          "nombre": "Proyector"
+        },
+        {
+          "id": "R002",
+          "nombre": "Pizarra Digital"
+        }
+      ]
+    }
+  ],
+  "aulas_no_disponibles": [
+    {
+      "id": "AU002",
+      "nombre": "Lab Computo 1",
+      "razon": "Tipo incompatible: laboratorio no es compatible con asignatura teorica"
+    }
+  ],
+  "total_disponibles": 1,
+  "total_no_disponibles": 1,
+  "error": null
+}
+```
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  **Key Response Fields:**
+  - `aulas_disponibles`: Classrooms that meet all requirements (capacity, type compatibility, time availability)
+  - `aulas_no_disponibles`: Classrooms that don't meet requirements, with reasons why
+  - `total_disponibles`: Count of available classrooms
 </Note>
+
+## Reserve a Classroom
+
+Once you've found an available classroom, reserve it for your course:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/reservar-aula \
+  -H "Content-Type: application/json" \
+  -d '{
+    "asignatura_id": "A001",
+    "aula_id": "AU001",
+    "fecha": "2024-03-15",
+    "dia": "Lunes",
+    "hora_inicio": "08:00",
+    "hora_fin": "10:00",
+    "cantidad_estudiantes": 30,
+    "semestre": 1,
+    "docente_id": "D001",
+    "id_usuario": "user123"
+  }'
+```
+
+Expected response:
+```json
+{
+  "success": true,
+  "message": "Aula reservada exitosamente",
+  "programacion_id": "PROG-2024-001",
+  "estado": "reservado"
+}
+```
+
+<Warning>
+  The API validates that the classroom is actually available before confirming the reservation. If the classroom becomes unavailable between checking and reserving, the request will fail with a 400 error.
+</Warning>
+
+## Explore the API
+
+Now that you have the basics working, explore more endpoints:
+
+<CardGroup cols={2}>
+  <Card title="Get Catalog Data" icon="database" href="/api/catalog-data">
+    Retrieve all classrooms, courses, teachers, and resources
+  </Card>
+  <Card title="Manage Schedules" icon="calendar" href="/api/schedules">
+    Create and manage complete semester schedules
+  </Card>
+  <Card title="View Reservations" icon="list" href="/api/reservations">
+    List all classroom reservations and their status
+  </Card>
+  <Card title="API Documentation" icon="book" href="http://localhost:8000/docs">
+    Interactive API documentation (Swagger UI)
+  </Card>
+</CardGroup>
+
+## Interactive API Documentation
+
+FastAPI automatically generates interactive API documentation. With your server running, visit:
+
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+These interfaces allow you to test all endpoints directly from your browser.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation Guide" icon="download" href="/installation">
+    Detailed setup instructions and configuration options
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Complete API endpoint documentation
+  </Card>
+  <Card title="Architecture" icon="diagram-project" href="/concepts/architecture">
+    Learn about the system's design patterns
+  </Card>
+  <Card title="Constraint Validation" icon="shield-check" href="/guides/constraint-validation">
+    Learn about the validation system
+  </Card>
+</CardGroup>
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Port already in use">
+    If port 8000 is already in use, specify a different port:
+    ```bash
+    uvicorn src.main:app --reload --port 8001
+    ```
+  </Accordion>
+
+  <Accordion title="Module not found error">
+    Ensure you're running the command from the project root directory and all dependencies are installed:
+    ```bash
+    pip install -r requirements.txt
+    ```
+  </Accordion>
+
+  <Accordion title="Invalid time format error">
+    Time must be in HH:MM format (24-hour). Valid examples: "08:00", "14:30", "23:59"
+  </Accordion>
+
+  <Accordion title="Invalid day error">
+    Day must be one of: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo
+  </Accordion>
+</AccordionGroup>

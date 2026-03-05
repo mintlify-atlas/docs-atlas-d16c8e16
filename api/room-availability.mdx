@@ -1,0 +1,373 @@
+---
+title: 'Room Availability'
+description: 'Check available classrooms based on course requirements and constraints'
+---
+
+## Get Available Classrooms
+
+<RequestExample>
+```bash cURL
+curl -X POST http://localhost:8000/api/v1/aulas-disponibles \
+  -H "Content-Type: application/json" \
+  -d '{
+    "asignatura_id": "A001",
+    "hora_inicio": "07:00",
+    "hora_fin": "09:00",
+    "dia": "Lunes",
+    "cantidad_estudiantes": 30,
+    "semestre": 1
+  }'
+```
+
+```python Python
+import requests
+
+url = "http://localhost:8000/api/v1/aulas-disponibles"
+payload = {
+    "asignatura_id": "A001",
+    "hora_inicio": "07:00",
+    "hora_fin": "09:00",
+    "dia": "Lunes",
+    "cantidad_estudiantes": 30,
+    "semestre": 1
+}
+
+response = requests.post(url, json=payload)
+result = response.json()
+
+print(f"Available classrooms: {result['total_disponibles']}")
+for aula in result['aulas_disponibles']:
+    print(f"- {aula['nombre']} (Capacity: {aula['capacidad']})")
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8000/api/v1/aulas-disponibles', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    asignatura_id: 'A001',
+    hora_inicio: '07:00',
+    hora_fin: '09:00',
+    dia: 'Lunes',
+    cantidad_estudiantes: 30,
+    semestre: 1
+  })
+});
+
+const data = await response.json();
+console.log(`Available: ${data.total_disponibles}`);
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Success
+{
+  "asignatura": {
+    "id": "A001",
+    "nombre": "Álgebra Lineal",
+    "tipo": "teorica"
+  },
+  "horario_solicitado": {
+    "dia": "Lunes",
+    "hora_inicio": "07:00",
+    "hora_fin": "09:00",
+    "cantidad_estudiantes": 30,
+    "semestre": 1
+  },
+  "aulas_disponibles": [
+    {
+      "id": "AU001",
+      "nombre": "Aula 101",
+      "tipo": "teorica",
+      "capacidad": 40,
+      "sede": {
+        "id": "S001",
+        "nombre": "Sede Principal"
+      },
+      "recursos": [
+        {
+          "id": "R001",
+          "nombre": "Proyector"
+        },
+        {
+          "id": "R002",
+          "nombre": "Pizarra Digital"
+        }
+      ]
+    }
+  ],
+  "aulas_no_disponibles": [
+    {
+      "id": "AU003",
+      "nombre": "Aula 201",
+      "razon": "Aula ocupada o reservada en el horario 07:00-09:00 el Lunes"
+    },
+    {
+      "id": "AU005",
+      "nombre": "Aula 102",
+      "razon": "Capacidad insuficiente: requiere 30 estudiantes, capacidad disponible 25"
+    }
+  ],
+  "total_disponibles": 1,
+  "total_no_disponibles": 2,
+  "error": null
+}
+```
+
+```json 404 Course Not Found
+{
+  "detail": "Asignatura con ID A999 no encontrada"
+}
+```
+
+```json 400 Validation Error
+{
+  "detail": [
+    {
+      "loc": ["body", "hora_inicio"],
+      "msg": "Formato de hora inválido. Debe ser HH:MM",
+      "type": "value_error"
+    }
+  ]
+}
+```
+
+```json 500 Server Error
+{
+  "detail": "Error interno del servidor: Database connection failed"
+}
+```
+</ResponseExample>
+
+### POST /aulas-disponibles
+
+Obtains available classrooms for a course at a specific time, applying all system constraints.
+
+#### How It Works
+
+The endpoint performs a multi-step evaluation:
+
+1. **Validates the course** exists and is active
+2. **Applies capacity constraint** - filters classrooms with sufficient capacity
+3. **Checks compatibility** - ensures classroom type matches course requirements (teorica, laboratorio, virtual)
+4. **Verifies availability** - checks no conflicting reservations exist for the time slot
+5. **Returns categorized results** - available and unavailable classrooms with reasons
+
+#### Request Body
+
+<ParamField body="asignatura_id" type="string" required>
+  ID of the course/subject. Must match an existing course in the system.
+  
+  Example: `"A001"` for Álgebra Lineal
+</ParamField>
+
+<ParamField body="hora_inicio" type="string" required>
+  Start time in 24-hour format `HH:MM`. Must be valid time between 00:00 and 23:59.
+  
+  Example: `"07:00"`
+</ParamField>
+
+<ParamField body="hora_fin" type="string" required>
+  End time in 24-hour format `HH:MM`. Must be after `hora_inicio`.
+  
+  Example: `"09:00"`
+</ParamField>
+
+<ParamField body="dia" type="string" required>
+  Day of the week in Spanish. Must be one of: `Lunes`, `Martes`, `Miércoles`, `Jueves`, `Viernes`, `Sábado`, `Domingo`.
+  
+  Example: `"Lunes"`
+</ParamField>
+
+<ParamField body="cantidad_estudiantes" type="integer" required>
+  Number of students. Must be greater than 0.
+  
+  Example: `30`
+</ParamField>
+
+<ParamField body="semestre" type="integer" required>
+  Academic semester. Must be between 1 and 10.
+  
+  Example: `1`
+</ParamField>
+
+#### Response Fields
+
+<ResponseField name="asignatura" type="object">
+  Information about the requested course.
+  
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">
+      Course ID
+    </ResponseField>
+    <ResponseField name="nombre" type="string">
+      Course name
+    </ResponseField>
+    <ResponseField name="tipo" type="string">
+      Course type: `teorica`, `laboratorio`, `virtual`, or `bloqueo`
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="horario_solicitado" type="object">
+  Echo of the requested time slot parameters.
+  
+  <Expandable title="properties">
+    <ResponseField name="dia" type="string">
+      Day of the week
+    </ResponseField>
+    <ResponseField name="hora_inicio" type="string">
+      Start time
+    </ResponseField>
+    <ResponseField name="hora_fin" type="string">
+      End time
+    </ResponseField>
+    <ResponseField name="cantidad_estudiantes" type="integer">
+      Number of students
+    </ResponseField>
+    <ResponseField name="semestre" type="integer">
+      Semester number
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="aulas_disponibles" type="array">
+  List of classrooms that meet all requirements and are available.
+  
+  <Expandable title="classroom object">
+    <ResponseField name="id" type="string">
+      Classroom ID
+    </ResponseField>
+    <ResponseField name="nombre" type="string">
+      Classroom name
+    </ResponseField>
+    <ResponseField name="tipo" type="string">
+      Classroom type
+    </ResponseField>
+    <ResponseField name="capacidad" type="integer">
+      Maximum capacity
+    </ResponseField>
+    <ResponseField name="sede" type="object">
+      Campus location information
+      <Expandable title="properties">
+        <ResponseField name="id" type="string">Campus ID</ResponseField>
+        <ResponseField name="nombre" type="string">Campus name</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="recursos" type="array">
+      Available resources in the classroom
+      <Expandable title="resource object">
+        <ResponseField name="id" type="string">Resource ID</ResponseField>
+        <ResponseField name="nombre" type="string">Resource name</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="aulas_no_disponibles" type="array">
+  List of classrooms that don't meet requirements, with reason for each.
+  
+  <Expandable title="unavailable classroom object">
+    <ResponseField name="id" type="string">
+      Classroom ID
+    </ResponseField>
+    <ResponseField name="nombre" type="string">
+      Classroom name
+    </ResponseField>
+    <ResponseField name="razon" type="string">
+      Reason why the classroom is not available. Possible reasons:
+      - Insufficient capacity
+      - Incompatible classroom type
+      - Already occupied/reserved for that time slot
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="total_disponibles" type="integer">
+  Count of available classrooms
+</ResponseField>
+
+<ResponseField name="total_no_disponibles" type="integer">
+  Count of unavailable classrooms
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if course not found, otherwise `null`
+</ResponseField>
+
+## Common Use Cases
+
+### Finding Large Classrooms
+
+```python
+# Request with high student count to filter for large rooms
+payload = {
+    "asignatura_id": "A001",
+    "cantidad_estudiantes": 50,  # Only large classrooms will qualify
+    "hora_inicio": "14:00",
+    "hora_fin": "16:00",
+    "dia": "Miércoles",
+    "semestre": 2
+}
+```
+
+### Checking Weekly Availability
+
+```python
+import requests
+
+days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
+availability = {}
+
+for day in days:
+    response = requests.post(
+        "http://localhost:8000/api/v1/aulas-disponibles",
+        json={
+            "asignatura_id": "A001",
+            "hora_inicio": "10:00",
+            "hora_fin": "12:00",
+            "dia": day,
+            "cantidad_estudiantes": 30,
+            "semestre": 1
+        }
+    )
+    data = response.json()
+    availability[day] = data['total_disponibles']
+
+print("Weekly availability:", availability)
+```
+
+## Understanding Constraints
+
+### Capacity Constraint
+
+Classrooms must have capacity >= requested students. Example rejection:
+
+```json
+{
+  "razon": "Capacidad insuficiente: requiere 30 estudiantes, capacidad disponible 25"
+}
+```
+
+### Compatibility Constraint
+
+Course type must match classroom type:
+
+| Course Type | Compatible Classroom Types |
+|-------------|---------------------------|
+| `teorica` | `teorica` |
+| `laboratorio` | `laboratorio` |
+| `virtual` | `virtual` |
+
+### Availability Constraint
+
+Classroom must not have overlapping reservations. The system checks:
+- Same day of week
+- Overlapping time periods
+- Active reservations (status: `reservado` or `ocupado`)
+
+<Warning>
+Availability is checked across ALL semesters. A Monday 07:00-09:00 reservation will block that classroom for all courses on Monday mornings, regardless of semester.
+</Warning>
